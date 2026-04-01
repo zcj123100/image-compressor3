@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>在线图片压缩工具 - 免费无水印</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:system-ui, -apple-system, "Microsoft YaHei", sans-serif;background:#f5f7fa;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:15px;color:#1d2129}
+        .container{width:100%;max-width:850px;margin:0 auto;padding:15px}
+        header{text-align:center;margin-bottom:30px;background:#fff;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+        h1{font-size:2rem;font-weight:700;color:#1a1a1a;margin-bottom:8px}
+        .subtitle{font-size:1rem;color:#6e767d;max-width:550px;margin:0 auto}
+        .main-card{background:#fff;border-radius:14px;box-shadow:0 4px 16px rgba(0,0,0,.08);padding:25px;margin-bottom:30px;width:100%}
+        .upload-area{border:2px dashed #0084ff;border-radius:12px;padding:35px 15px;text-align:center;cursor:pointer;transition:all .2s ease;background:#f8f9fa;margin-bottom:25px}
+        .upload-area:hover,.upload-area.dragover{background:#eef5ff;border-color:#0066cc}
+        .upload-icon{font-size:2.5rem;color:#0084ff;margin-bottom:12px}
+        .upload-title{font-size:1.3rem;font-weight:600;color:#1a1a1a;margin-bottom:6px}
+        .upload-text{font-size:.9rem;color:#6e767d;margin-bottom:12px}
+        .file-input{display:none}
+        .btn{display:inline-block;padding:10px 22px;background:#0084ff;color:#fff;border:none;border-radius:8px;font-size:.95rem;font-weight:600;cursor:pointer;transition:all .2s ease}
+        .btn:hover{background:#0066cc}
+        .btn:disabled{background:#b3b3b3;cursor:not-allowed}
+        .control-group{margin-bottom:20px}
+        .control-label{display:flex;justify-content:space-between;margin-bottom:8px;font-weight:600;color:#1a1a1a}
+        .quality-value{color:#0084ff}
+        .slider{width:100%;height:6px;border-radius:3px;background:#e5e5e5;outline:none;-webkit-appearance:none}
+        .slider::-webkit-slider-thumb{width:18px;height:18px;border-radius:50%;background:#0084ff;cursor:pointer}
+        .preview-section{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:25px}
+        @media(max-width:768px){.preview-section{grid-template-columns:1fr}}
+        .preview-card{background:#f8f9fa;border-radius:10px;padding:15px;text-align:center}
+        .preview-title{font-size:1.1rem;font-weight:600;margin-bottom:12px;color:#1a1a1a}
+        .preview-img{max-width:100%;max-height:220px;border-radius:8px;background:#fff;padding:6px;margin-bottom:10px;object-fit:contain}
+        .file-info{font-size:.85rem;color:#444;background:#fff;padding:8px;border-radius:6px}
+        .file-size{font-weight:700;color:#1a1a1a}
+        .download-section{text-align:center;padding:20px;background:#f8f9fa;border-radius:10px;margin-bottom:15px}
+        .download-btn{background:#00a86b;font-size:1rem;padding:12px 30px}
+        .download-btn:hover{background:#008c5a}
+        .donate-section{margin-top:15px;padding:15px;background:#fef7f7;border-radius:10px;border:1px solid #ffe8e8;text-align:center}
+        .donate-title{font-size:1rem;font-weight:600;color:#d32f2f;margin-bottom:12px}
+        .qr-group{display:flex;justify-content:center;gap:20px;flex-wrap:wrap}
+        .qr-item{text-align:center}
+        .qr-img{width:90px;height:90px;border-radius:8px;border:1px solid #eee}
+        .qr-label{margin-top:8px;font-size:.85rem;color:#444}
+        footer{text-align:center;padding:20px;color:#6e767d;font-size:.85rem;background:#fff;border-radius:12px;margin-top:auto}
+        .hidden{display:none}
+        .loading{opacity:.7;pointer-events:none}
+        .savings-positive{color:#00a86b}
+        .savings-negative{color:#d32f2f}
+        .savings-neutral{color:#6e767d}
+        @keyframes pulse {
+            0% { opacity: 0.7; }
+            50% { opacity: 1; }
+            100% { opacity: 0.7; }
+        }
+        .updating {
+            animation: pulse 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>在线图片压缩工具</h1>
+            <p class="subtitle">免费、快速、本地处理，不上传服务器，无水印，支持JPG/PNG/WebP</p>
+        </header>
+
+        <div class="main-card">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📁</div>
+                <h2 class="upload-title">点击或拖拽图片至此</h2>
+                <p class="upload-text">单张图片最大 50MB</p>
+                <button class="btn" id="selectBtn">选择图片</button>
+                <input type="file" id="fileInput" class="file-input" accept="image/jpeg,image/png,image/webp">
+            </div>
+
+            <div class="control-group">
+                <div class="control-label">
+                    <span>压缩质量</span>
+                    <span class="quality-value" id="qualityValue">80%</span>
+                </div>
+                <input type="range" min="10" max="100" value="80" class="slider" id="qualitySlider">
+                <div style="display:flex;justify-content:space-between;font-size:.75rem;color:#888;margin-top:4px">
+                    <span>更小体积</span>
+                    <span>更高画质</span>
+                </div>
+            </div>
+
+            <div class="preview-section">
+                <div class="preview-card">
+                    <h3 class="preview-title">原图</h3>
+                    <img id="originalPreview" class="preview-img hidden">
+                    <div id="originalPlaceholder" class="preview-img">暂无图片</div>
+                    <div class="file-info">大小：<span class="file-size" id="originalSize">0 KB</span></div>
+                </div>
+                <div class="preview-card">
+                    <h3 class="preview-title">压缩后 <span id="compressedQuality" style="font-size:0.9rem;color:#0084ff;font-weight:normal">(80%)</span></h3>
+                    <img id="compressedPreview" class="preview-img hidden">
+                    <div id="compressedPlaceholder" class="preview-img">处理中...</div>
+                    <div class="file-info">大小：<span class="file-size" id="compressedSize">0 KB</span>
+                        <div style="margin-top:4px;font-size:.75rem;color:#0084ff" id="savings"></div>
+                    </div>
+                    <p id="wechatTip" class="wechat-tip hidden" style="margin-top:8px;font-size:.75rem;color:#d32f2f;text-align:center;">在微信中，长按上方图片即可保存</p>
+                </div>
+            </div>
+
+            <div class="download-section">
+                <button class="btn download-btn" id="downloadBtn" disabled>下载压缩图片</button>
+                <p style="margin-top:8px;font-size:.8rem;color:#6e767d">所有处理在本地浏览器完成，保护隐私</p>
+            </div>
+        </div>
+
+        <div class="donate-section">
+            <h3 class="donate-title">❤️ 觉得好用可以请作者喝杯水</h3>
+            <div class="qr-group">
+                <div class="qr-item">
+                    <img src="wechat.png" class="qr-img">
+                    <p class="qr-label">微信</p>
+                </div>
+                <div class="qr-item">
+                    <img src="alipay.png" class="qr-img">
+                    <p class="qr-label">支付宝</p>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>© 2026 在线图片压缩工具 | 免费安全</p>
+        </footer>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const uploadArea = document.getElementById('uploadArea');
+        const selectBtn = document.getElementById('selectBtn');
+        const qualitySlider = document.getElementById('qualitySlider');
+        const qualityValue = document.getElementById('qualityValue');
+        const originalPreview = document.getElementById('originalPreview');
+        const compressedPreview = document.getElementById('compressedPreview');
+        const originalPlaceholder = document.getElementById('originalPlaceholder');
+        const compressedPlaceholder = document.getElementById('compressedPlaceholder');
+        const originalSize = document.getElementById('originalSize');
+        const compressedSize = document.getElementById('compressedSize');
+        const savings = document.getElementById('savings');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const compressedQuality = document.getElementById('compressedQuality');
+
+        // 微信浏览器检测
+        const isWeChatBrowser = /MicroMessenger/i.test(navigator.userAgent);
+        if (isWeChatBrowser) {
+            downloadBtn.textContent = '长按图片保存';
+            const wechatTip = document.getElementById('wechatTip');
+            if (wechatTip) wechatTip.classList.remove('hidden');
+        }
+        const useDataURLForWeChat = isWeChatBrowser;
+
+        let originalImg, originalFile, compressedBlob, currentPreviewUrl, currentDataUrl;
+        let compressTimeout = null;
+        let currentCompressId = 0;
+
+        selectBtn.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
+
+        uploadArea.addEventListener('dragover', e => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+        uploadArea.addEventListener('drop', e => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files && files.length > 0) {
+                handleFile(files[0]);
+            } else {
+                alert('请拖拽图片文件到此处');
+            }
+        });
+
+        qualitySlider.addEventListener('input', () => {
+            qualityValue.textContent = qualitySlider.value + '%';
+            if (compressedQuality) {
+                compressedQuality.textContent = '(' + qualitySlider.value + '%)';
+            }
+            if (originalImg) {
+                // 防抖处理，避免快速滑动时频繁压缩
+                clearTimeout(compressTimeout);
+                compressTimeout = setTimeout(() => compressImg(), 150);
+            }
+        });
+
+        function handleFile(file) {
+            if (!file) return;
+            if (!file.type || !file.type.startsWith('image/') || file.size > 50 * 1024 * 1024) {
+                alert('请上传有效的图片文件（JPG/PNG/WebP），大小不超过50MB');
+                return;
+            }
+            originalFile = file;
+            originalSize.textContent = formatSize(file.size);
+            const reader = new FileReader();
+            reader.onload = e => {
+                originalImg = new Image();
+                originalImg.onload = () => {
+                    originalPreview.src = e.target.result;
+                    originalPreview.classList.remove('hidden');
+                    originalPlaceholder.style.display = 'none';
+                    compressImg();
+                };
+                originalImg.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function compressImg() {
+            if (!originalImg) return;
+
+            // 清理之前的预览URL避免内存泄漏
+            if (currentPreviewUrl) {
+                URL.revokeObjectURL(currentPreviewUrl);
+                currentPreviewUrl = null;
+            }
+            if (currentDataUrl) {
+                currentDataUrl = null; // 让垃圾回收器处理
+            }
+
+            // 增加压缩ID，用于处理竞态条件
+            currentCompressId++;
+            const compressId = currentCompressId;
+
+            compressedPlaceholder.classList.add('loading');
+            downloadBtn.disabled = true;
+            downloadBtn.textContent = '压缩中...';
+
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            let w = originalImg.width, h = originalImg.height;
+            const max = 2000;
+            if (w > max) { h = max / w * h; w = max; }
+            canvas.width = w;
+            canvas.height = h;
+
+            // 如果输出格式是 JPEG 且原图是 PNG，用白色背景填充透明区域
+            const outputType = originalFile.type === 'image/png' ? 'image/jpeg' : originalFile.type;
+            if (outputType === 'image/jpeg') {
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
+            ctx.drawImage(originalImg, 0, 0, w, h);
+
+            const quality = parseInt(qualitySlider.value) / 100;
+
+            canvas.toBlob(blob => {
+                // 检查是否为最新的压缩请求
+                if (compressId !== currentCompressId) {
+                    console.log('忽略过时的压缩结果');
+                    return;
+                }
+                compressedBlob = blob;
+                compressedSize.textContent = formatSize(blob.size);
+                const saving = originalFile.size - blob.size;
+                const percentage = originalFile.size > 0 ? (Math.abs(saving) / originalFile.size * 100).toFixed(1) : '0.0';
+                if (saving > 0) {
+                    savings.textContent = '已节省 ' + percentage + '%';
+                    savings.style.color = '#00a86b';
+                } else if (saving < 0) {
+                    savings.textContent = '增加了 ' + percentage + '%';
+                    savings.style.color = '#d32f2f';
+                } else {
+                    savings.textContent = '大小基本不变';
+                    savings.style.color = '#6e767d';
+                }
+                // 清理之前的预览URL避免内存泄漏
+                if (currentPreviewUrl) {
+                    URL.revokeObjectURL(currentPreviewUrl);
+                    currentPreviewUrl = null;
+                }
+                if (currentDataUrl) {
+                    currentDataUrl = null; // 让垃圾回收器处理
+                }
+
+                if (useDataURLForWeChat) {
+                    // 在微信中使用Data URL以提高兼容性
+                    currentDataUrl = canvas.toDataURL(outputType, quality);
+                    compressedPreview.src = currentDataUrl;
+                } else {
+                    currentPreviewUrl = URL.createObjectURL(blob);
+                    compressedPreview.src = currentPreviewUrl;
+                }
+                compressedPreview.classList.remove('hidden');
+
+                // 添加视觉反馈，显示图片已更新
+                compressedPreview.classList.add('updating');
+                setTimeout(() => compressedPreview.classList.remove('updating'), 500);
+
+                compressedPlaceholder.classList.remove('loading');
+                compressedPlaceholder.style.display = 'none';
+                downloadBtn.disabled = false;
+                downloadBtn.textContent = '下载压缩图片';
+            }, outputType, quality);
+        }
+
+        downloadBtn.addEventListener('click', () => {
+            if (!compressedBlob) return;
+            if (isWeChatBrowser) {
+                alert('在微信中，请长按上方压缩后的图片，选择"保存图片"即可下载。');
+                return;
+            }
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(compressedBlob);
+            const ext = getExtensionFromMime(compressedBlob.type);
+            a.download = originalFile.name.replace(/\.[^/.]+$/, '') + '_压缩版.' + ext;
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(a.href), 100);
+        });
+
+        function formatSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1048576) return (bytes / 1024).toFixed(2) + ' KB';
+            return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+        }
+
+        function getExtensionFromMime(mime) {
+            if (mime === 'image/jpeg' || mime === 'image/jpg') return 'jpg';
+            if (mime === 'image/png') return 'png';
+            if (mime === 'image/webp') return 'webp';
+            return 'jpg';
+        }
+
+        qualityValue.textContent = qualitySlider.value + '%';
+        if (compressedQuality) {
+            compressedQuality.textContent = '(' + qualitySlider.value + '%)';
+        }
+    </script>
+</body>
+</html>
